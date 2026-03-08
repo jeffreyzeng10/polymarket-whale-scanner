@@ -1,0 +1,18 @@
+import dotenv from 'dotenv';
+import path from 'path';
+
+dotenv.config({ path: path.resolve(process.cwd(), '.env') });
+
+export const CONFIG = {
+  TELEGRAM_BOT_TOKEN: process.env.TELEGRAM_BOT_TOKEN || '',
+  TELEGRAM_CHAT_ID: process.env.TELEGRAM_CHAT_ID || '',
+  TELEGRAM_THREAD_ID: parseInt(process.env.TELEGRAM_THREAD_ID || '3', 10),
+  DB_PATH: process.env.DB_PATH || 'data/whale-scanner.db',
+  WHALE_MIN_BUY_USD: 1000,
+  SHARP_MIN_POSITION_CHANGE_USD: 500,
+  TOP_MARKETS_COUNT: 30,
+  API_DELAY_MS: 300,
+  DATA_API_BASE: 'https://data-api.polymarket.com',
+  GAMMA_API_BASE: 'https://gamma-api.polymarket.com',
+  SHARP_WALLETS: [] as string[],
+};
