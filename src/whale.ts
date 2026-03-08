@@ -1,6 +1,6 @@
 import { fetchTopMarkets, fetchMarketTrades, fetchWalletPositions, sleep, Market, Trade } from './api';
 import { hasAlertBeenSent, markAlertSent, recordWhaleDetection, getSharpWallets } from './db';
-import { sendAlert, formatWhaleAlert } from './telegram';
+import { queueAlert, formatWhaleAlert } from './telegram';
 import { CONFIG } from './config';
 
 export class WhaleScanner {
@@ -67,7 +67,7 @@ export class WhaleScanner {
             conditionId: market.conditionId,
           });
 
-          await sendAlert(message);
+          queueAlert('whale', message);
           markAlertSent(alertKey);
           recordWhaleDetection(
             data.trades[0]?.maker || makerLower,
@@ -78,7 +78,6 @@ export class WhaleScanner {
           );
 
           whalesFound++;
-          await sleep(500); // Rate limit between Telegram messages
         }
       } catch (err) {
         console.error(`[WhaleScanner] Error processing market ${market.conditionId}:`, err);

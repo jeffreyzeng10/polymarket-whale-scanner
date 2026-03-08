@@ -1,6 +1,6 @@
 import { fetchTopMarkets, fetchMarketTrades, sleep, Market } from './api';
 import { hasAlertBeenSent, markAlertSent } from './db';
-import { sendAlert, formatVolumeAlert } from './telegram';
+import { queueAlert, formatVolumeAlert } from './telegram';
 import { CONFIG } from './config';
 
 const ONE_HOUR_MS = 60 * 60 * 1000;
@@ -56,10 +56,9 @@ export class VolumeScanner {
             totalVolume: market.volume,
           });
 
-          await sendAlert(message);
+          queueAlert('volume', message);
           markAlertSent(alertKey);
           spikeCount++;
-          await sleep(500);
         }
       } catch (err) {
         console.error(`[VolumeScanner] Error processing market ${market.conditionId}:`, err);

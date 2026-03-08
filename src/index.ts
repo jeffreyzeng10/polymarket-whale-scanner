@@ -4,6 +4,7 @@ import { fetchLeaderboard } from './api';
 import { WhaleScanner } from './whale';
 import { SharpScanner } from './sharp';
 import { VolumeScanner } from './volume';
+import { flushDigest } from './telegram';
 
 import { CONFIG } from './config';
 
@@ -65,6 +66,9 @@ async function main(): Promise<void> {
   await whaleScanner.scan();
   await sharpScanner.scan(sharpWallets);
   await volumeScanner.scan();
+
+  // Send all queued alerts as a single digest message
+  await flushDigest();
 
   const elapsed = Date.now() - startTime.getTime();
   console.log(`\n=== Scan complete in ${(elapsed / 1000).toFixed(1)}s ===\n`);

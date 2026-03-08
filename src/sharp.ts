@@ -6,7 +6,7 @@ import {
   markAlertSent,
   SharpWallet,
 } from './db';
-import { sendAlert, formatSharpAlert } from './telegram';
+import { queueAlert, formatSharpAlert } from './telegram';
 import { CONFIG } from './config';
 
 export class SharpScanner {
@@ -81,10 +81,9 @@ export class SharpScanner {
               isNew,
             });
 
-            await sendAlert(message);
+            queueAlert('sharp', message);
             markAlertSent(alertKey);
             alertsSent++;
-            await sleep(500);
           }
         }
       } catch (err) {
