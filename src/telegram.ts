@@ -13,9 +13,24 @@ export function shortenWallet(wallet: string): string {
   return `${wallet.slice(0, 6)}...${wallet.slice(-4)}`;
 }
 
+let alertCount = 0;
+const MAX_ALERTS_PER_RUN = 5;
+
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
 export async function sendAlert(message: string): Promise<void> {
+  alertCount++;
+  if (alertCount > MAX_ALERTS_PER_RUN) {
+    console.log(`[Telegram] Skipping alert (${alertCount}/${MAX_ALERTS_PER_RUN} max per run): ${message.slice(0, 60)}...`);
+    return;
+  }
+
   const url = `https://api.telegram.org/bot${CONFIG.TELEGRAM_BOT_TOKEN}/sendMessage`;
   try {
+    // Rate limit: 1.5s between messages to avoid 429
+    await sleep(1500);
     await axios.post(url, {
       chat_id: CONFIG.TELEGRAM_CHAT_ID,
       text: message,
@@ -23,10 +38,34 @@ export async function sendAlert(message: string): Promise<void> {
       message_thread_id: CONFIG.TELEGRAM_THREAD_ID,
       disable_web_page_preview: true,
     });
-    console.log(`Telegram alert sent: ${message.slice(0, 80)}...`);
-  } catch (err) {
-    console.error('Failed to send Telegram alert:', err);
+    console.log(`Telegram alert sent (${alertCount}/${MAX_ALERTS_PER_RUN}): ${message.slice(0, 80)}...`);
+  } catch (err: unknown) {
+    const axiosErr = err as { response?: { status: number; data?: { parameters?: { retry_after?: number } } } };
+    if (axiosErr.response?.status === 429) {
+      const retryAfter = axiosErr.response.data?.parameters?.retry_after || 10;
+      console.warn(`[Telegram] Rate limited. Waiting ${retryAfter}s...`);
+      await sleep(retryAfter * 1000);
+      // Retry once
+      try {
+        await axios.post(url, {
+          chat_id: CONFIG.TELEGRAM_CHAT_ID,
+          text: message,
+          parse_mode: 'HTML',
+          message_thread_id: CONFIG.TELEGRAM_THREAD_ID,
+          disable_web_page_preview: true,
+        });
+        console.log(`Telegram alert sent (retry): ${message.slice(0, 80)}...`);
+      } catch (retryErr) {
+        console.error('Failed to send Telegram alert after retry:', retryErr);
+      }
+    } else {
+      console.error('Failed to send Telegram alert:', err);
+    }
   }
+}
+
+export function resetAlertCount(): void {
+  alertCount = 0;
 }
 
 export function formatWhaleAlert(params: {

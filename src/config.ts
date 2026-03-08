@@ -15,4 +15,8 @@ export const CONFIG = {
   DATA_API_BASE: 'https://data-api.polymarket.com',
   GAMMA_API_BASE: 'https://gamma-api.polymarket.com',
   SHARP_WALLETS: [] as string[],
+  // Known sharp bettors — hardcoded as fallback
+  KNOWN_SHARP_WALLETS: [
+    { wallet: '0xdb27bf2ac5d428a9c63dbc914611036855a6c56e', label: 'DrPufferfish' },
+  ] as { wallet: string; label: string }[],
 };

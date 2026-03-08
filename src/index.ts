@@ -5,42 +5,36 @@ import { WhaleScanner } from './whale';
 import { SharpScanner } from './sharp';
 import { VolumeScanner } from './volume';
 
-// DrPufferfish placeholder — real wallet found via leaderboard fetch at startup
-const DRPUFFERFISH_PLACEHOLDER = '0x0000000000000000000000000000000000000001';
-const DRPUFFERFISH_LABEL = 'DrPufferfish (TODO: find real wallet)';
+import { CONFIG } from './config';
 
-async function seedDrPufferfish(): Promise<void> {
-  console.log('[Seed] Looking up DrPufferfish on leaderboard...');
+async function seedSharpWallets(): Promise<void> {
+  console.log('[Seed] Seeding known sharp wallets...');
+  
+  // Always seed hardcoded known wallets first
+  for (const { wallet, label } of CONFIG.KNOWN_SHARP_WALLETS) {
+    addSharpWallet(wallet, label);
+    console.log(`[Seed] Added known wallet: ${label} (${wallet})`);
+  }
+
+  // Try to find more from leaderboard
   try {
+    console.log('[Seed] Scanning leaderboard for additional sharp bettors...');
     const entries = await fetchLeaderboard();
-    let found = false;
-
+    
     for (const entry of entries) {
-      // Search all string fields for "puffer"
-      const searchFields = [entry.name, entry.username, entry.pseudonym, entry.displayName as string | undefined];
-      const matchesName = searchFields.some(
-        (f) => typeof f === 'string' && f.toLowerCase().includes('puffer')
-      );
-
-      if (matchesName) {
-        const wallet = String(entry.proxyWallet || entry.address || '');
-        if (!wallet || wallet === '0x') continue;
-
-        console.log(`[Seed] Found DrPufferfish! Wallet: ${wallet}`);
-        addSharpWallet(wallet, 'DrPufferfish');
-        found = true;
-        break;
+      const name = String(entry.name || entry.username || '');
+      const wallet = String(entry.proxyWallet || entry.address || '');
+      if (!wallet || wallet === '0x' || !name) continue;
+      
+      // Auto-add top 10 PnL traders as sharp wallets
+      const rank = parseInt(String((entry as Record<string, unknown>).rank || '999'), 10);
+      if (rank <= 10) {
+        addSharpWallet(wallet, `${name} (Rank #${rank})`);
+        console.log(`[Seed] Added leaderboard trader: ${name} (Rank #${rank})`);
       }
     }
-
-    if (!found) {
-      console.log('[Seed] DrPufferfish not found in leaderboard top 100. Using placeholder.');
-      addSharpWallet(DRPUFFERFISH_PLACEHOLDER, DRPUFFERFISH_LABEL);
-    }
   } catch (err) {
-    console.error('[Seed] Failed to fetch leaderboard:', err);
-    console.log('[Seed] Adding DrPufferfish placeholder wallet.');
-    addSharpWallet(DRPUFFERFISH_PLACEHOLDER, DRPUFFERFISH_LABEL);
+    console.warn('[Seed] Leaderboard fetch failed, using hardcoded wallets only:', (err as Error).message);
   }
 }
 
@@ -53,8 +47,8 @@ async function main(): Promise<void> {
   // 1. Initialize database
   initDb();
 
-  // 2. Seed DrPufferfish wallet
-  await seedDrPufferfish();
+  // 2. Seed sharp wallets (DrPufferfish + top leaderboard)
+  await seedSharpWallets();
 
   // 3. Get sharp wallets from DB
   const sharpWallets = getSharpWallets();

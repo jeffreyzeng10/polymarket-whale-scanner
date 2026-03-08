@@ -159,13 +159,19 @@ export async function fetchWalletActivity(wallet: string, limit = 50): Promise<T
 
 export async function fetchLeaderboard(): Promise<LeaderboardEntry[]> {
   return withRetry(async () => {
-    const resp = await axios.get('https://leaderboard-api.polymarket.com/leaderboard', {
-      params: { limit: 100 },
+    const resp = await axios.get('https://data-api.polymarket.com/v1/leaderboard', {
+      params: { timePeriod: 'ALL', orderBy: 'PNL', limit: 50 },
       timeout: 10000,
       headers: { 'User-Agent': USER_AGENT },
     });
 
     const data = Array.isArray(resp.data) ? resp.data : resp.data.data || resp.data.leaderboard || [];
-    return data as LeaderboardEntry[];
+    return data.map((entry: Record<string, unknown>) => ({
+      ...entry,
+      name: entry.userName || entry.name || '',
+      username: entry.userName || entry.username || '',
+      proxyWallet: entry.proxyWallet || entry.address || '',
+      address: entry.proxyWallet || entry.address || '',
+    })) as LeaderboardEntry[];
   });
 }
