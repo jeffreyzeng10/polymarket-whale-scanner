@@ -7,6 +7,8 @@ export const CONFIG = {
   TELEGRAM_BOT_TOKEN: process.env.TELEGRAM_BOT_TOKEN || '',
   TELEGRAM_CHAT_ID: process.env.TELEGRAM_CHAT_ID || '',
   TELEGRAM_THREAD_ID: parseInt(process.env.TELEGRAM_THREAD_ID || '3', 10),
+  PORTFOLIO_THREAD_ID: parseInt(process.env.PORTFOLIO_THREAD_ID || '3', 10),
+  PORTFOLIO_WALLET: process.env.PORTFOLIO_WALLET || '0xC633f71c204fe0202703cc4aB8e4Ff66CcFF415A',
   DB_PATH: process.env.DB_PATH || 'data/whale-scanner.db',
   WHALE_MIN_BUY_USD: 1000,
   SHARP_MIN_POSITION_CHANGE_USD: 500,

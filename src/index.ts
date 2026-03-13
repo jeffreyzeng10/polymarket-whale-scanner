@@ -4,6 +4,7 @@ import { fetchLeaderboard } from './api';
 import { WhaleScanner } from './whale';
 import { SharpScanner } from './sharp';
 import { VolumeScanner } from './volume';
+import { PortfolioMonitor } from './portfolio';
 import { flushDigest } from './telegram';
 
 import { CONFIG } from './config';
@@ -66,6 +67,10 @@ async function main(): Promise<void> {
   await whaleScanner.scan();
   await sharpScanner.scan(sharpWallets);
   await volumeScanner.scan();
+
+  // Portfolio monitor sends directly to Trading topic (thread 3), not via digest
+  const portfolioMonitor = new PortfolioMonitor();
+  await portfolioMonitor.scan();
 
   // Send all queued alerts as a single digest message
   await flushDigest();

@@ -141,6 +141,42 @@ export async function sendAlert(message: string): Promise<void> {
   await sendMessage(message);
 }
 
+// Portfolio-specific sender — goes to Trading topic (thread 3), not Alerts thread
+export async function sendPortfolioMessage(text: string): Promise<void> {
+  const url = `https://api.telegram.org/bot${CONFIG.TELEGRAM_BOT_TOKEN}/sendMessage`;
+  try {
+    await axios.post(url, {
+      chat_id: CONFIG.TELEGRAM_CHAT_ID,
+      text,
+      parse_mode: 'HTML',
+      message_thread_id: CONFIG.PORTFOLIO_THREAD_ID,
+      disable_web_page_preview: true,
+    });
+    console.log(`[Telegram/Portfolio] Message sent (${text.length} chars)`);
+  } catch (err: unknown) {
+    const axiosErr = err as { response?: { status: number; data?: { parameters?: { retry_after?: number } } } };
+    if (axiosErr.response?.status === 429) {
+      const retryAfter = axiosErr.response.data?.parameters?.retry_after || 10;
+      console.warn(`[Telegram/Portfolio] Rate limited. Waiting ${retryAfter}s...`);
+      await sleep(retryAfter * 1000);
+      try {
+        await axios.post(url, {
+          chat_id: CONFIG.TELEGRAM_CHAT_ID,
+          text,
+          parse_mode: 'HTML',
+          message_thread_id: CONFIG.PORTFOLIO_THREAD_ID,
+          disable_web_page_preview: true,
+        });
+        console.log(`[Telegram/Portfolio] Message sent (retry)`);
+      } catch (retryErr) {
+        console.error('[Telegram/Portfolio] Failed after retry:', retryErr);
+      }
+    } else {
+      console.error('[Telegram/Portfolio] Failed to send:', err);
+    }
+  }
+}
+
 export function resetAlertCount(): void {
   pendingAlerts.length = 0;
 }

@@ -53,6 +53,30 @@ export function initDb(): void {
       outcome TEXT,
       detected_at INTEGER
     );
+
+    CREATE TABLE IF NOT EXISTS portfolio_snapshots (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      wallet TEXT NOT NULL,
+      total_positions INTEGER,
+      total_value_usd REAL,
+      positions_json TEXT,
+      snapshot_at INTEGER
+    );
+
+    CREATE TABLE IF NOT EXISTS portfolio_alerts (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      wallet TEXT NOT NULL,
+      alert_type TEXT NOT NULL,
+      condition_id TEXT,
+      details TEXT,
+      alerted_at INTEGER
+    );
+
+    CREATE TABLE IF NOT EXISTS market_resolution_cache (
+      condition_id TEXT PRIMARY KEY,
+      resolved INTEGER DEFAULT 0,
+      checked_at INTEGER
+    );
   `);
 
   // chmod 600 the db file after creation
